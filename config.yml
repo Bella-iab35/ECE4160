@@ -1,0 +1,7 @@
+# Site settings
+title: iab35 - ECE 4160
+description: Bella Barhorst's labs and assignments for ECE 4160: Fast Robots
+show_downloads: false
+
+# Build settings
+theme: jekyll-theme-time-machine
