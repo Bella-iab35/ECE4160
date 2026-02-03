@@ -6,29 +6,29 @@
 I already had the Arduino IDE installed, so as suggested by the lab instructions, that is the IDE I used to do this lab and future lab. The only thing I had to do for this part's prelab was to install the [json file](https://learn.sparkfun.com/tutorials/artemis-development-with-the-arduino-ide/setting-up-the-arduino-ide) for the Sparkfun Apollo boards manager and then add them to the Arduino IDE settings where it asks for "Additional boards manager URLS." With that linked, I was able to install the needed board manager so that I could connect to the SparkFun RedBoard Artemis Nano.
 ## Tasks ##
 
-#### Blink ####
+#### Blink: ####
 
-#### Serial ####
+This example is found in File->Examples->01.Basics and when uploaded, the LED on the board blinks.
 
-#### Analog Reading - Temperature Sensing ####
+![blink](blink.mov)
 
-#### PDM - Microphone Output ####
+#### Serial: ####
 
-- Blink
-	- Explain how code works?
-	- Note if the baud rate was slowed down
-	- Video from phone of the board blinking
-- Serial
-	- Explain code
-	- Check baud rate: 115200
-	- Screen record (if there's anything physical happening, record and split screen)
-- analog read
-	- Code
-	- Record measurements and also me holding the chip -> split screen
-	- serial monitor shows raw temps
-- Microphone Output
-	- purpose and code
-	- splitscreen with output and me speaking to change frequency. If output is not video, I can personally animate it
+This example, found in File->Examples->Apollo3, introduces a use of the serial monitor where the message sent to the board is printed to the serial monitor. To ensure understandable messages are printed, the baud rate needs to set to 115200 baud as noted within the example code.
+
+![serial](serial.mov)
+
+#### Analog Reading - Temperature Sensing: ####
+
+Found in File->Examples->Apollo3, this utilizes the temperature sensor on the board, which is an analog sensor. The raw temperatures are printed to the serial monitor with the temperature rising slowly due to transferring my heat taking time.
+
+![analog reading](temp.mov)
+
+#### PDM - Microphone Output: ####
+
+The final example can be found in File->Examples->PDM. When uploaded to the board, the recorded frequencies are printed to the serial monitor with higher frequencies representing when the board picked up any noise (ex. I was tapping my desk).
+
+![microphone output](microphoneoutput.mov)
 
 ---
 # Lab 1B #
@@ -38,7 +38,7 @@ I already had the Arduino IDE installed, so as suggested by the lab instructions
 #### In the Command Window... ####
 This prelab focused on setting up the python environment that the Sparkfun Artemis was going to establish a communication channel with. I already had a compatible version of Python 3 installed (3.12.3) that fell into the range of versions (Python 3.10 - 3.13) that avoided async issues with Bleak and the lab codebase.
 
-![[Screenshot 2026-01-20 at 1.59.48 PM.png]]
+![[pythonv.png]]
 
 With python already installed, I then installed venv and, within my project directory for ECE 4160, created "FastRobots_ble," the virtual environment where I will end up working on the python code within Jupyter Lab. 
 
@@ -80,7 +80,7 @@ It was time to connect the Artemis board to my computer, so first I had to insta
 
 ## Tasks ##
 
-#### Echo ####
+#### Echo: ####
 
 ```
 #Send string
@@ -100,16 +100,17 @@ tx_characteristic_string.writeValue(tx_estring_value.c_str());
 Serial.println(char_arr);
 ```
 
-
-
-#### Send Three Integers ####
+![[q1_echo.png]]
+#### Send Three Integers: ####
 
 ```
 ble.send_command(CMD.SEND_THREE_FLOATS, "1.0|-2.0|5.7")
 ```
 
+![[3floatsvs2ints.png]]
 
-#### GET_TIME_MILLIS ####
+![[3floats.png]]
+#### GET_TIME_MILLIS: ####
 
 ```
 ble.send_command(CMD.GET_TIME_MILLIS, "")
@@ -122,7 +123,8 @@ tx_estring_value.append((int) millis());
 tx_characteristic_string.writeValue(tx_estring_value.c_str());
 ```
 
-#### Notification Handler ####
+![[gettime.png]]
+#### Notification Handler: ####
 
 ```
 def notification_handler(uuid, char_str):
@@ -132,7 +134,9 @@ def notification_handler(uuid, char_str):
     
 ble.start_notify(ble.uuid['RX_STRING'], notification_handler)
 ```
-#### Loop Getting Current Time ####
+
+![[handler.png]]
+#### Loop Getting Current Time: ####
 
 ```
 ble.send_command(CMD.LOOP, "")
@@ -158,7 +162,9 @@ while ((millis()-startTime) <= 5000){
 Serial.print("Number of timestamps: ");
 Serial.println(count);
 ```
-#### Storing and Sending Time Data ####
+
+![[loop.png]]
+#### Storing and Sending Time Data: ####
 
 ```
 timeStamps = []
@@ -184,7 +190,9 @@ for (int time:timeStamps){
 	tx_characteristic_string.writeValue(tx_estring_value.c_str());
 }
 ```
-#### Storing and Getting Temperature Readings and Time ####
+
+![[timestamplist.png]]
+#### Storing and Getting Temperature Readings and Time: ####
 
 ```
 timeStamps = []
@@ -224,6 +232,7 @@ for (int i = 0; i < MAX_MSG_SIZE; i++){
 	tx_characteristic_string.writeValue(tx_estring_value.c_str());
 }
 ```
+![[temp_time.png]]
 #### Difference in Data Recording Methods... ####
 
 
