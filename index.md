@@ -7,3 +7,9 @@ Hi, I am Bella Barhorst! I am a senior in ECE with an interest in robotics and c
 This website will contain my progress in ECE4160 throughout the spring semester of 2026.
 
 ![](portrait_photo.jpeg)
+
+
+---
+## Labs ##
+
+[Lab 1](Lab1.md)
