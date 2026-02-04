@@ -1,9 +1,10 @@
 ---
 # Lab 1A #
 ---
-## Prelab 1A##
+## Prelab 1A ##
 
-I already had the Arduino IDE installed, so as suggested by the lab instructions, that is the IDE I used to do this lab and future lab. The only thing I had to do for this part's prelab was to install the [json file](https://learn.sparkfun.com/tutorials/artemis-development-with-the-arduino-ide/setting-up-the-arduino-ide) for the Sparkfun Apollo boards manager and then add them to the Arduino IDE settings where it asks for "Additional boards manager URLS." With that linked, I was able to install the needed board manager so that I could connect to the SparkFun RedBoard Artemis Nano.
+I already had the Arduino IDE installed, so the only thing I had to do for this part's prelab was to install the [json file](https://learn.sparkfun.com/tutorials/artemis-development-with-the-arduino-ide/setting-up-the-arduino-ide) for the Sparkfun Apollo boards manager and add it to the IDE settings where it asks for "Additional boards manager URLS." Then I was able to install the needed board manager so that I could connect to the SparkFun RedBoard Artemis Nano.
+
 ## Tasks ##
 
 #### Blink: ####
@@ -62,7 +63,7 @@ Inside the environment, I had to first install all needed python packages, which
 pip install numpy pyyaml colorama nest_asyncio bleak jupyterlab
 ```
 
-One last thing needed to be downloaded into my project directory: the [codebase](https://fastrobotscornell.github.io/FastRobots-2026/labs/ble_robot_1.4.zip) that includes both the python and arduino code for this portion of the lab. With everything that is required downloaded and installed into my directory or virtual environment, I started my Jupyter server (note that I had to use Jupyter lab with a capital J due to being on macOS).
+One last thing needed to be downloaded into my project directory: the [codebase](https://fastrobotscornell.github.io/FastRobots-2026/labs/ble_robot_1.4.zip) that includes both the python and arduino code for this portion of the lab. With everything now downloaded and installed from the terminal, I started my Jupyter server (note that I had to use Jupyter lab with a capital J due to being on macOS).
 
 ```
 Jupyter lab
@@ -71,9 +72,10 @@ Jupyter lab
 #### In the Arduino IDE... ####
 
 It was time to connect the Artemis board to my computer, so first I had to install ArduinoBLE from the library manager and then compile and upload the sketch ble_arduino.ino provided from the ble_arduino directory from the previously downloaded codebase. This will lead to the board's MAC address being printed to the serial monitor.
-## Configurations ##
 
 ![[MACaddress.png]]
+
+## Configurations ##
 ![[uuid4 1.png]]
 ![[uuidsmatch.png]]
 ![[connected.png]]
@@ -82,11 +84,14 @@ It was time to connect the Artemis board to my computer, so first I had to insta
 
 #### Echo: ####
 
+Starting in my notebook file, I used the send_command command to call ECHO and input the message I want echoed back as the second argument, sending this to the board for the command handler to handle.
+
 ```
 #Send string
-ble.send_command(CMD.ECHO,"Hello World")
+ble.send_command(CMD.ECHO,"Hello")
 ```
 
+When it came to the ble_arduino code, I referenced the PING command as that command had a similar purpose of taking a message sent from the computer ("Hello" in this case rather than "PING) and then have the board send a message back to the computer ("Robot says -> Hello :) rather than "PONG"). Thus, I cleared what tx_estring_value was set to, appended the portions of the message I wanted the board to send back. It had to be separated into different calls to append to properly concatenate the normal strings with the char_arr. Then I wrote the value to the tx_characteristic_string so that my computer could access it when it was time to receive the string using the receive_string function.
 
 ```
 // Append to tx_estring_value
@@ -103,18 +108,21 @@ Serial.println(char_arr);
 ![[q1_echo.png]]
 #### Send Three Integers: ####
 
+Here is the function call to send the command to the board along with the three floats--separated by "|"--I want it to extract.
+
 ```
 ble.send_command(CMD.SEND_THREE_FLOATS, "1.0|-2.0|5.7")
 ```
 
+For this command, I referenced the command SEND_TWO_INTS where any instance of an int was replaced with a float, and I added one more variable, extraction of the next value from the command string, and serial print statement so that all three floats were extracted and printed. 
+
 ![[3floatsvs2ints.png]]
 
 ![[3floats.png]]
+
 #### GET_TIME_MILLIS: ####
 
-```
-ble.send_command(CMD.GET_TIME_MILLIS, "")
-```
+In order to get the time of how long the board had been running in milliseconds, within another case in the switch statement, I utilized similar code to ECHO where I cleared tx_estring_value, appended "T:" as a label for the time, and then appended the time that is returned by millis(). Given millis() returns an unsigned long and I ran into issues appending it, I converted it to an int before ultimately writing the full estring to the characteristic string that will be received and printed by my computer. 
 
 ```
 tx_estring_value.clear();
@@ -124,7 +132,10 @@ tx_characteristic_string.writeValue(tx_estring_value.c_str());
 ```
 
 ![[gettime.png]]
+
 #### Notification Handler: ####
+
+
 
 ```
 def notification_handler(uuid, char_str):
@@ -136,6 +147,7 @@ ble.start_notify(ble.uuid['RX_STRING'], notification_handler)
 ```
 
 ![[handler.png]]
+
 #### Loop Getting Current Time: ####
 
 ```
@@ -164,6 +176,7 @@ Serial.println(count);
 ```
 
 ![[loop.png]]
+
 #### Storing and Sending Time Data: ####
 
 ```
@@ -177,9 +190,9 @@ def get_times(uuid, char_str):
 
 ```
 while ((millis()-startTime) <= 5000 && count < MAX_MSG_SIZE){
-	...
+	time = millis();
 	timeStamps[count] = millis();
-	...
+	count++
 }
 ```
 
@@ -191,7 +204,8 @@ for (int time:timeStamps){
 }
 ```
 
-![[timestamplist.png]]
+![[timestamps.png]]
+
 #### Storing and Getting Temperature Readings and Time: ####
 
 ```
@@ -211,11 +225,6 @@ def get_temp(uuid, char_str):
 while ((millis()-startTime) <= 5000 && count < MAX_MSG_SIZE){
 	time = millis();
 	temp = getTempDegF();
-	tx_estring_value.clear();
-	tx_estring_value.append((int) time);
-	tx_estring_value.append(":");
-	tx_estring_value.append((int) temp);
-	tx_characteristic_string.writeValue(tx_estring_value.c_str());
 	temperatures[count] = temp;
 	timeStamps[count] = time;
 	count++;
@@ -232,11 +241,13 @@ for (int i = 0; i < MAX_MSG_SIZE; i++){
 	tx_characteristic_string.writeValue(tx_estring_value.c_str());
 }
 ```
+
 ![[temp_time.png]]
+
 #### Difference in Data Recording Methods... ####
 
+One major difference is the number of arrays looped over and how the computer gains access to the data within the arrays. The method that used SEND_TIME_DATA only loops over one array at a time (the array with time stamps in this case) after having to use another command (LOOP) to fill the array. If this was to send more than just time data, it would take more time to traverse several arrays with the command only focusing on one array at a time. Even with one array, with 114,835 as the start time and 114,839 as the end, data is recorded every 37.75 ms. This method, however, made appending to the list in python and printing the data easier as it is only one piece of data that needs to be extracted at a time, which may only include cutting off a prefix or appending it as is without having to slice any received strings.
 
+On the other hand, the method that used GET_TEMP_READINGS would record and traverse the data quicker as it is appending data to the characteristic string from multiple arrays at the same time rather than going through each array individually. To quantify how quickly it can record and get data, with 151 pieces of data in each array where the first time is 56,948 ms and the last is 56,995 during my testing, the data is recorded every 3.21 ms, much faster than the previous method. This does lead to a more complicated extraction process when receiving the string and wanting to add it to python lists as the received string initially has to be formatted in a way that is easy to slice and get the data without extra characters, and every piece of data needs to be separately stored to then be appended. Part of this may stem from me using the LOOP command to store the values to the arrays first where I had to adjust how I appended the values to be written to the characteristic string. 
 
-- When going through the demo, laptop asked if I wanted to give the terminal access to bluetooth
-
-
+With access to 384 kB of space on the Artemis board, I used 46,728 bytes of dynamic memory being used for global variables according to what is printed in the IDE's output when uploading code to the board, which leaves 337,272 bytes of space left. The data being stored in the two arrays are of type unsigned long, which is at least 4 bytes. Thus, dividing the remaining space by 8 bytes (4 bytes for each array) notes that 42,159 data points can be saved without running out of memory on the board.
