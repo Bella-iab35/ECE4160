@@ -11,7 +11,7 @@ I already had the Arduino IDE installed, so the only thing I had to do for this 
 
 This example is found in File->Examples->01.Basics and when uploaded, the LED on the board blinks.
 
-![blink](blink.mov)
+![blink](blink.mp4)
 
 #### Serial: ####
 
@@ -73,12 +73,20 @@ Jupyter lab
 
 It was time to connect the Artemis board to my computer, so first I had to install ArduinoBLE from the library manager and then compile and upload the sketch ble_arduino.ino provided from the ble_arduino directory from the previously downloaded codebase. This will lead to the board's MAC address being printed to the serial monitor.
 
-![[MACaddress.png]]
+![MACaddress](MACaddress.png)
 
 ## Configurations ##
-![[uuid4 1.png]]
-![[uuidsmatch.png]]
-![[connected.png]]
+
+In order to ensure that the board and my computer would connect via bluetooth, I copied the MACaddress that was printed in the serial monitor and changed the artemis_address value in connections.yaml to the MACaddress. 
+
+Then, to also ensure I did not accidentally connect to anyone else's board, I generated a new UUID to then paste as the UUID defined as BLE_UUID_TEST_SERVICE in the ble_arduino file and also to replace ble_service in connections.yaml.
+
+![uuid4 1.png](uuid4.png)
+![uuidsmatch.png](uuidsmatch.png)
+
+When it finally time to test if I could create a proper connection for the first time, a pop up appeared, asking if I wanted to give the terminal access to bluetooth. Saying yes to that, I was able to connect to the board.
+
+![connected.png](connected.png)
 
 ## Tasks ##
 
@@ -105,7 +113,8 @@ tx_characteristic_string.writeValue(tx_estring_value.c_str());
 Serial.println(char_arr);
 ```
 
-![[q1_echo.png]]
+![q1_echo.png](q1_echo.png)
+
 #### Send Three Integers: ####
 
 Here is the function call to send the command to the board along with the three floats--separated by "|"--I want it to extract.
@@ -116,9 +125,9 @@ ble.send_command(CMD.SEND_THREE_FLOATS, "1.0|-2.0|5.7")
 
 For this command, I referenced the command SEND_TWO_INTS where any instance of an int was replaced with a float, and I added one more variable, extraction of the next value from the command string, and serial print statement so that all three floats were extracted and printed. 
 
-![[3floatsvs2ints.png]]
+![3floatsvs2ints.png](3floatsvs2ints.png)
 
-![[3floats.png]]
+![3floats.png](3floats.png)
 
 #### GET_TIME_MILLIS: ####
 
@@ -131,11 +140,11 @@ tx_estring_value.append((int) millis());
 tx_characteristic_string.writeValue(tx_estring_value.c_str());
 ```
 
-![[gettime.png]]
+![gettime.png](gettime.png)
 
 #### Notification Handler: ####
 
-
+For the notification handler, I created a separate python function that took the characteristic string that was received, converted it from a byte array to the string type that python could work with, and then spliced it to get the time since the characteristic array was received as "T: [Time]." Once the time is extracted, I would print a more detailed message as noted in the code block below. To call the handler, before any commands are called, I called start_notify with the name of the notification handler function as the second argument.
 
 ```
 def notification_handler(uuid, char_str):
@@ -146,13 +155,17 @@ def notification_handler(uuid, char_str):
 ble.start_notify(ble.uuid['RX_STRING'], notification_handler)
 ```
 
-![[handler.png]]
+![handler.png](handler.png)
 
 #### Loop Getting Current Time: ####
+
+I added a new command case called LOOP to get the current time over the course of a given number of seconds.
 
 ```
 ble.send_command(CMD.LOOP, "")
 ```
+
+I created two new local variables to keep track of the start time of when the command was received by the board and the count in order to count the number of iterations the loop made.
 
 ```
 // Variables
@@ -160,7 +173,11 @@ unsigned long startTime;
 startTime = millis();
 int count;
 count = 0;
+```
 
+Then I added a while-loop that would run for 5 seconds as it wrote the current time to the characteristic string for my computer to receive and later print using the notification handler. After the value was written, count was incremented, allowing me to know how many times the current time was written, which was printed to the serial monitor once the command was completed. 
+
+```
 // Loop
 while ((millis()-startTime) <= 5000){
 	tx_estring_value.clear();
@@ -175,9 +192,13 @@ Serial.print("Number of timestamps: ");
 Serial.println(count);
 ```
 
-![[loop.png]]
+![loop.png](loop.png)
+
+The effective data transfer rate for this command, with 36,193 as my starting value and 41,187 as my end value when I went back to perform this calculation over 248 iterations, is 20.137 milliseconds.
 
 #### Storing and Sending Time Data: ####
+
+As this task did not require printing each time within a message and did require appending to a list, I made another notification handler that only extracted the time and then appended it to a list for time stamps.
 
 ```
 timeStamps = []
@@ -185,8 +206,10 @@ timeStamps = []
 def get_times(uuid, char_str):
     s = ble.bytearray_to_string(char_str)
     time = int(s[2:])
-    timeStamps.append(time)
+    timeStamps.append(int(time))
 ```
+
+In the Arduino IDE, I adjusted LOOP to only store the current time into a global array of size 151, which was determined by the MAX_MSG_SIZE and didn't lead to the board disconnecting each time. Also count in this instance was used as an index.
 
 ```
 while ((millis()-startTime) <= 5000 && count < MAX_MSG_SIZE){
@@ -196,6 +219,8 @@ while ((millis()-startTime) <= 5000 && count < MAX_MSG_SIZE){
 }
 ```
 
+Once all the time stamps were stored, I created a new command SEND_TIME_DATA where I looped over the array to write each time to the characteristic string so that my computer could receive it and append it to the python list to ensure that the times were being stored correctly.
+
 ```
 tx_estring_value.clear();
 for (int time:timeStamps){
@@ -204,9 +229,11 @@ for (int time:timeStamps){
 }
 ```
 
-![[timestamps.png]]
+![timestamps.png](timestamps.png)
 
 #### Storing and Getting Temperature Readings and Time: ####
+
+Similar to the last task, I created another notification handler function that now had the addition of splitting the received string to extract both time and temperature into separate variables to then append those data points to the correct list.
 
 ```
 timeStamps = []
@@ -221,6 +248,8 @@ def get_temp(uuid, char_str):
     
 ```
 
+In the IDE, I once again edited the loop to be able to store temperatures that were recorded at each time stamp that was saved into another global array of size 151.
+
 ```
 while ((millis()-startTime) <= 5000 && count < MAX_MSG_SIZE){
 	time = millis();
@@ -230,6 +259,8 @@ while ((millis()-startTime) <= 5000 && count < MAX_MSG_SIZE){
 	count++;
 }
 ```
+
+Then in a new command GET_TEMP_READINGS, I looped over both temperature and time stamp arrays at the same time, concatenating them with a colon inbetween before writing it to the characteristic string.
 
 ```
 tx_estring_value.clear();
@@ -242,7 +273,7 @@ for (int i = 0; i < MAX_MSG_SIZE; i++){
 }
 ```
 
-![[temp_time.png]]
+![temp_time.png](temp_time.png)
 
 #### Difference in Data Recording Methods... ####
 
